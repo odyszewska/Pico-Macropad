@@ -52,6 +52,30 @@ byte customChar2[8] = {
   0b00000
 };
 
+//prev
+byte customChar3[8] = {
+  0b00010,
+  0b00110,
+  0b01110,
+  0b11110,
+  0b01110,
+  0b00110,
+  0b00010,
+  0b00000
+};
+
+//line
+byte customChar4[8] = {
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00000
+};
+
 const char* modeScreen[16][4] = {
   {
     "", "", "", ""
@@ -59,7 +83,7 @@ const char* modeScreen[16][4] = {
 
   {
     "T01 Ggl|AGH|DSC|HELP",
-    "   USOS|UPL|---|--- ",
+    "   USOS|UPL|   |    ",
     "",
     "    V+5|V-5|DOK|MOD "
   },
@@ -74,92 +98,92 @@ const char* modeScreen[16][4] = {
   {
     "T03 CtA|Ct<|Ct>|Del ",
     "   CtBs|Sh<|Sh>|Bcsp",
-    "    ---|Tab|---|Ent ",
+    "       |Tab|   |Ent ",
     "    CtB|CtI|CtU|MOD "
   },
 
   {
-    "T04 ---|---|Home|End",
-    "    Tab|ShTb|---|---",
-    "    ---| ^ |PUp|PDn ",
+    "T04    |   |End|Home",
+    "    Tab|STb|   |    ",
+    "       | ^ |PUp|PDn ",
     "     < | v | > |MOD "
   },
 
   {
-    "T05  0 | 1 | 2 | 3  ",
+    "T05 Yes|No |Ok |Hi! ",
+    "    Thx|Sry|Pls|Done",
+    "   NPrb|Sur|YWl|Nice ",
+    "       |   |   |MOD "
+  },
+
+  { 
+    "T06 Gma|Ggl|YT |GTrs", 
+    "   USOS|UPL|gtb|GPT ",
+    "   pAGH|AGH|   |    ",
+    "       |   |dok|MOD "
+  },
+
+  {
+    "",
+    "   v+20|v+5|v-5|v-20",
+    "   b+20|b+5|b-5|b-20",
+    "       |   |   |MOD "
+  },
+
+  {
+    "T08 cd |ls |pwd|mkdr",
+    "    rm |clr|ext|gsta",
+    "   gadd|gcm|gpu|gpul",
+    "    pip|pyt|   |MOD "
+  },
+
+  {
+    "T09 CtT|CtW|CtN|Atab",
+    "   CtST|CtF|CtR|CtL ",
+    "   hist|dow|ss |Inco",
+    "    zm+|zm-|zm0|MOD "
+  },
+
+  {
+    "T10  0 | 1 | 2 | 3  ", //TODO: emoji
     "     4 | 5 | 6 | 7  ",
     "     8 | 9 | + | -  ",
     "     * | / | % |MOD "
   },
 
   {
-    "T06  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
+    "T11 a/ą| b |c/ć| d ", //TODO: polish characters
+    "    e/ę| f | g | h  ",
+    "     i | j | k |l/ł ",
+    "     m |shf|cap|MOD "
   },
 
   {
-    "T07  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
+    "T12 n/ń|o/ó| p | q  ", //TODO: polish characters
+    "     r |s/ś| t | u  ",
+    "     v | w |x/ż| y  ",
+    "    z/ż|shf|cap|MOD "
   },
 
   {
-    "T08  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
+    "T13  . | , | ! | ?  ",
+    "     - |  | : | ;  ",  //TODO: long dash
+    "     ' | \"\" |(/)|{/} ", //TODO: "
+    "    [/]|   |spc|MOD "
   },
 
   {
-    "T09  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
+    "T14  @ | # | $ | ^  ",
+    "     & |   |   |    ",
+    "       |   |   |    ",
+    "       |   |   |MOD "
   },
 
   {
-    "T10  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
-  },
-
-  {
-    "T11  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
-  },
-
-  {
-    "T12  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
-  },
-
-  {
-    "T13  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
-  },
-
-  {
-    "T14  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
-  },
-
-  {
-    "T15  0 | 1 | 2 | 3  ",
-    "     4 | 5 | 6 | 7  ",
-    "     8 | 9 | + | -  ",
-    "     * | / | % |MOD "
+    "T15    |   |   |    ",
+    "       |   |   |    ",
+    "       |   |   |    ",
+    "       |   |   |MOD "
   }
 };
 
@@ -182,7 +206,46 @@ void renderMode1CustomRow2() {
   lcd.write(byte(0));
   lcd.print("/");
   lcd.write(byte(1));
-  lcd.print("|NXT|PRV|MUT ");
+
+  lcd.print("|");
+
+  lcd.write(byte(3));
+  lcd.write(byte(2));
+  lcd.write(byte(2));
+
+  lcd.print("|");
+
+  lcd.write(byte(0));
+  lcd.write(byte(0));
+  lcd.write(byte(3));
+
+  lcd.print("|mute");
+}
+
+void renderMode7CustomRow0() {
+  lcd.setCursor(0, 0);
+  lcd.print("                    ");
+
+  lcd.setCursor(0, 0);
+  lcd.print("T07 ");
+
+  lcd.write(byte(0));
+  lcd.print("/");
+  lcd.write(byte(1));
+
+  lcd.print("|");
+
+  lcd.write(byte(3));
+  lcd.write(byte(2));
+  lcd.write(byte(2));
+
+  lcd.print("|");
+
+  lcd.write(byte(2));
+  lcd.write(byte(2));
+  lcd.write(byte(3));
+
+  lcd.print("|mute");
 }
 
 void renderScreen() {
@@ -193,13 +256,16 @@ void renderScreen() {
     lcdPrintLine(0, line0);
     lcdPrintLine(1, "    txt|:-D|url|ster");
     lcdPrintLine(2, "    trm|bro|a-m|n-z");
-    lcdPrintLine(3, "    ?{!|---|---|MOD");
+    lcdPrintLine(3, "    ?{!|   |   |MOD");
   } else {
     lcdPrintLine(0, modeScreen[currentMode][0]);
     lcdPrintLine(1, modeScreen[currentMode][1]);
 
     if (currentMode == 1) {
       renderMode1CustomRow2();
+    } else if (currentMode == 7){
+      renderMode7CustomRow0();
+      lcdPrintLine(2, modeScreen[currentMode][2]);
     } else {
       lcdPrintLine(2, modeScreen[currentMode][2]);
     }
@@ -343,6 +409,8 @@ void setup() {
 
   lcd.createChar(0, customChar1);
   lcd.createChar(1, customChar2);
+  lcd.createChar(2, customChar3);
+  lcd.createChar(3, customChar4);
 
   lcd.clear();
   renderScreen();
