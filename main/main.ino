@@ -2,6 +2,57 @@
 #include <Keyboard.h>
 #include <USB.h>
 
+#ifndef HID_USAGE_CONSUMER_VOLUME_INCREMENT
+#define HID_USAGE_CONSUMER_VOLUME_INCREMENT 0x00E9
+#endif
+
+#ifndef HID_USAGE_CONSUMER_VOLUME_DECREMENT
+#define HID_USAGE_CONSUMER_VOLUME_DECREMENT 0x00EA
+#endif
+
+#ifndef HID_USAGE_CONSUMER_BRIGHTNESS_INCREMENT
+#define HID_USAGE_CONSUMER_BRIGHTNESS_INCREMENT 0x006F
+#endif
+
+#ifndef HID_USAGE_CONSUMER_BRIGHTNESS_DECREMENT
+#define HID_USAGE_CONSUMER_BRIGHTNESS_DECREMENT 0x0070
+#endif
+
+#ifndef HID_USAGE_CONSUMER_PLAY_PAUSE
+#define HID_USAGE_CONSUMER_PLAY_PAUSE 0x00CD
+#endif
+
+#ifndef HID_USAGE_CONSUMER_SCAN_PREVIOUS_TRACK
+#define HID_USAGE_CONSUMER_SCAN_PREVIOUS_TRACK 0x00B6
+#endif
+
+#ifndef HID_USAGE_CONSUMER_SCAN_NEXT_TRACK
+#define HID_USAGE_CONSUMER_SCAN_NEXT_TRACK 0x00B5
+#endif
+
+#ifndef HID_USAGE_CONSUMER_STOP
+#define HID_USAGE_CONSUMER_STOP 0x00B7
+#endif
+
+#ifndef HID_USAGE_CONSUMER_MUTE
+#define HID_USAGE_CONSUMER_MUTE 0x00E2
+#endif
+
+class MacroKeyboard_ : public Keyboard_ {
+public:
+  void pressConsumer(uint16_t key) {
+    sendConsumerReport(key);
+  }
+
+  void releaseConsumer() {
+    sendConsumerReport(0);
+  }
+};
+
+MacroKeyboard_ MacroKeyboard;
+
+#define Keyboard MacroKeyboard
+
 LiquidCrystal lcd(8, 9, 10, 11, 12, 13);
 
 const int rows[4] = {4, 5, 6, 7};
@@ -22,9 +73,9 @@ bool shiftOnce = false;
 // cap = CapsLock logiczny dla liter
 bool capsLockEnabled = false;
 
-// spc = tryb znaków po ukośniku:
-// T11/T12: a/ą, c/ć, e/ę...
-// T13: (/), {/}, [/]
+// alt = tryb alternatywnych znaków:
+ // T11/T12: a/ą, c/ć, e/ę...
+ // T13: (/), {/}, [/]
 bool spcMode = false;
 
 // który zestaw własnych znaków LCD jest aktualnie załadowany
@@ -71,6 +122,14 @@ const char* mode5TextMap[15] = {
   "Thank you", "Sorry", "Please", "Done",
   "No problem", "Sure", "You're welcome", "Nice",
   "", "", ""
+};
+
+// T08 — komendy terminalowe
+const char* mode8TerminalMap[15] = {
+  "cd ", "ls", "pwd", "mkdir ",
+  "rm ", "clear", "exit", "git status",
+  "git add .", "git commit -m \"\"", "git push", "git pull",
+  "python main.py", "pip install ", ""
 };
 
 // T10 — tekstowe emotki
@@ -260,7 +319,7 @@ const char* modeScreen[16][4] = {
     "T01 Ggl|AGH|DSC|HELP",
     "   USOS|UPL|   |    ",
     "",
-    "    V+5|V-5|DOK|MOD "
+    "    V-6|V+6|DOK|MOD "
   },
 
   {
@@ -273,7 +332,7 @@ const char* modeScreen[16][4] = {
   {
     "T03 CtA|Ct<|Ct>|Del ",
     "   CtBs|Sh<|Sh>|Bcsp",
-    "       |Tab|   |Ent ",
+    "    spc|Tab|   |Ent ",
     "    CtB|CtI|CtU|MOD "
   },
 
@@ -300,8 +359,8 @@ const char* modeScreen[16][4] = {
 
   {
     "",
-    "   v+20|v+5|v-5|v-20",
-    "   b+20|b+5|b-5|b-20",
+    "   v-20|v-6|v+6|v+20",
+    "   b-20|b-6|b+6|b+20",
     "       |   |   |MOD "
   },
 
@@ -309,7 +368,7 @@ const char* modeScreen[16][4] = {
     "T08 cd |ls |pwd|mkdr",
     "    rm |clr|ext|gsta",
     "   gadd|gcm|gpu|gpul",
-    "    pip|pyt|   |MOD "
+    "    pyt|pip|CMD|MOD "
   },
 
   {
@@ -338,7 +397,7 @@ const char* modeScreen[16][4] = {
     "T13  . | , | ! | ?  ",
     "     - | _ | : | ;  ",
     "     ' | \" |(/)|{/}",
-    "    [/]|   |spc|MOD "
+    "    [/]|spc|alt|MOD "
   },
 
   {
@@ -413,7 +472,7 @@ void lcdPrintModifierStatus() {
   lcd.print(capsLockEnabled ? "CAP" : "   ");
 
   lcd.setCursor(0, 3);
-  lcd.print(spcMode ? "SPC" : "   ");
+  lcd.print(spcMode ? "ALT" : "   ");
 }
 
 void renderMode1CustomRow2() {
@@ -488,7 +547,7 @@ void renderMode11Screen() {
   lcd.print(" ");
 
   lcd.setCursor(0, 3);
-  lcd.print("    shf|cap|spc|MOD");
+  lcd.print("    shf|cap|alt|MOD");
 
   lcdPrintModifierStatus();
 }
@@ -516,7 +575,7 @@ void renderMode12Screen() {
   lcd.print("  ");
 
   lcd.setCursor(0, 3);
-  lcd.print("    shf|cap|spc|MOD");
+  lcd.print("    shf|cap|alt|MOD");
 
   lcdPrintModifierStatus();
 }
@@ -563,7 +622,7 @@ void renderScreen() {
 
   if (currentMode == 13) {
     lcd.setCursor(0, 3);
-    lcd.print(spcMode ? "SPC" : "   ");
+    lcd.print(spcMode ? "ALT" : "   ");
   }
 
   if (currentMode == 14) {
@@ -733,7 +792,7 @@ void sendTextMode11(uint8_t buttonNumber) {
 
     case 15:
       spcMode = !spcMode;
-      Serial.print("SPC: ");
+      Serial.print("ALT: ");
       Serial.println(spcMode ? "ON" : "OFF");
       renderScreen();
       break;
@@ -813,7 +872,7 @@ void sendTextMode12(uint8_t buttonNumber) {
 
     case 15:
       spcMode = !spcMode;
-      Serial.print("SPC: ");
+      Serial.print("ALT: ");
       Serial.println(spcMode ? "ON" : "OFF");
       renderScreen();
       break;
@@ -825,7 +884,7 @@ void sendMode13Char(uint8_t buttonNumber) {
 
   if (buttonNumber == 15) {
     spcMode = !spcMode;
-    Serial.print("SPC: ");
+    Serial.print("ALT: ");
     Serial.println(spcMode ? "ON" : "OFF");
     renderScreen();
     return;
@@ -869,6 +928,29 @@ void sendMode5Text(uint8_t buttonNumber) {
   Serial.println(text);
 }
 
+void sendMode8Terminal(uint8_t buttonNumber) {
+  if (buttonNumber < 1 || buttonNumber > 15) return;
+
+  if (buttonNumber == 15) {
+    openCmd();
+    Serial.println("Tryb 8 -> otwarto CMD");
+    return;
+  }
+
+  const char* command = mode8TerminalMap[buttonNumber - 1];
+
+  if (command == nullptr) return;
+  if (command[0] == '\0') return;
+
+  Keyboard.print(command);
+
+  shiftOnce = false;
+  renderScreen();
+
+  Serial.print("Tryb 8 -> wpisano: ");
+  Serial.println(command);
+}
+
 void sendMode10Emote(uint8_t buttonNumber) {
   if (buttonNumber < 1 || buttonNumber > 15) return;
 
@@ -901,7 +983,384 @@ void openUrl(const char* url) {
   renderScreen();
 }
 
+void openCmd() {
+  Keyboard.press(KEY_LEFT_GUI);
+  Keyboard.press('r');
+  delay(100);
+  Keyboard.releaseAll();
 
+  delay(300);
+
+  Keyboard.print("cmd");
+  delay(100);
+
+  Keyboard.press(KEY_RETURN);
+  delay(50);
+  Keyboard.releaseAll();
+
+  shiftOnce = false;
+  renderScreen();
+}
+
+void pressCtrlKey(uint8_t key) {
+  Keyboard.press(KEY_LEFT_CTRL);
+  delay(5);
+  Keyboard.press(key);
+  delay(20);
+  Keyboard.releaseAll();
+  delay(20);
+
+  renderScreen();
+}
+
+void pressShiftKey(uint8_t key) {
+  Keyboard.press(KEY_LEFT_SHIFT);
+  delay(5);
+  Keyboard.press(key);
+  delay(20);
+  Keyboard.releaseAll();
+  delay(20);
+
+  renderScreen();
+}
+
+void pressCtrlShiftKey(uint8_t key) {
+  Keyboard.press(KEY_LEFT_CTRL);
+  Keyboard.press(KEY_LEFT_SHIFT);
+  delay(5);
+  Keyboard.press(key);
+  delay(20);
+  Keyboard.releaseAll();
+  delay(20);
+
+  renderScreen();
+}
+
+void pressAltKey(uint8_t key) {
+  Keyboard.press(KEY_LEFT_ALT);
+  delay(5);
+  Keyboard.press(key);
+  delay(20);
+  Keyboard.releaseAll();
+  delay(20);
+
+  renderScreen();
+}
+
+void pressWinKey(uint8_t key) {
+  Keyboard.press(KEY_LEFT_GUI);
+  delay(5);
+  Keyboard.press(key);
+  delay(20);
+  Keyboard.releaseAll();
+  delay(20);
+
+  renderScreen();
+}
+
+void pressWinShiftKey(uint8_t key) {
+  Keyboard.press(KEY_LEFT_GUI);
+  Keyboard.press(KEY_LEFT_SHIFT);
+  delay(5);
+  Keyboard.press(key);
+  delay(20);
+  Keyboard.releaseAll();
+  delay(20);
+
+  renderScreen();
+}
+
+void pressSingleKey(uint8_t key) {
+  Keyboard.press(key);
+  delay(20);
+  Keyboard.releaseAll();
+  delay(20);
+
+  renderScreen();
+}
+
+void handleMode3TextEdit(uint8_t buttonNumber) {
+  switch (buttonNumber) {
+    case 1:
+      pressCtrlKey('a');
+      Serial.println("Tryb 3 -> Ctrl + A");
+      break;
+
+    case 2:
+      pressCtrlKey(KEY_LEFT_ARROW);
+      Serial.println("Tryb 3 -> Ctrl + Left");
+      break;
+
+    case 3:
+      pressCtrlKey(KEY_RIGHT_ARROW);
+      Serial.println("Tryb 3 -> Ctrl + Right");
+      break;
+
+    case 4:
+      pressSingleKey(KEY_DELETE);
+      Serial.println("Tryb 3 -> Delete");
+      break;
+
+    case 5:
+      pressCtrlKey(KEY_BACKSPACE);
+      Serial.println("Tryb 3 -> Ctrl + Backspace");
+      break;
+
+    case 6:
+      pressShiftKey(KEY_LEFT_ARROW);
+      Serial.println("Tryb 3 -> Shift + Left");
+      break;
+
+    case 7:
+      pressShiftKey(KEY_RIGHT_ARROW);
+      Serial.println("Tryb 3 -> Shift + Right");
+      break;
+
+    case 8:
+      pressSingleKey(KEY_BACKSPACE);
+      Serial.println("Tryb 3 -> Backspace");
+      break;
+
+    case 9:
+      pressSingleKey(' ');
+      Serial.println("Tryb 3 -> Space");
+      break;
+
+    case 10:
+      pressSingleKey(KEY_TAB);
+      Serial.println("Tryb 3 -> Tab");
+      break;
+
+    case 12:
+      pressSingleKey(KEY_RETURN);
+      Serial.println("Tryb 3 -> Enter");
+      break;
+
+    case 13:
+      pressCtrlKey('b');
+      Serial.println("Tryb 3 -> Ctrl + B");
+      break;
+
+    case 14:
+      pressCtrlKey('i');
+      Serial.println("Tryb 3 -> Ctrl + I");
+      break;
+
+    case 15:
+      pressCtrlKey('u');
+      Serial.println("Tryb 3 -> Ctrl + U");
+      break;
+
+    default:
+      Serial.print("Tryb 3, brak akcji dla S");
+      Serial.println(buttonNumber);
+      break;
+  }
+}
+
+void handleMode4Navigation(uint8_t buttonNumber) {
+  switch (buttonNumber) {
+    case 3:
+      pressSingleKey(KEY_END);
+      Serial.println("Tryb 4 -> End");
+      break;
+
+    case 4:
+      pressSingleKey(KEY_HOME);
+      Serial.println("Tryb 4 -> Home");
+      break;
+
+    case 5:
+      pressSingleKey(KEY_TAB);
+      Serial.println("Tryb 4 -> Tab");
+      break;
+
+    case 6:
+      pressShiftKey(KEY_TAB);
+      Serial.println("Tryb 4 -> Shift + Tab");
+      break;
+
+    case 10:
+      pressSingleKey(KEY_UP_ARROW);
+      Serial.println("Tryb 4 -> Up");
+      break;
+
+    case 11:
+      pressSingleKey(KEY_PAGE_UP);
+      Serial.println("Tryb 4 -> Page Up");
+      break;
+
+    case 12:
+      pressSingleKey(KEY_PAGE_DOWN);
+      Serial.println("Tryb 4 -> Page Down");
+      break;
+
+    case 13:
+      pressSingleKey(KEY_LEFT_ARROW);
+      Serial.println("Tryb 4 -> Left");
+      break;
+
+    case 14:
+      pressSingleKey(KEY_DOWN_ARROW);
+      Serial.println("Tryb 4 -> Down");
+      break;
+
+    case 15:
+      pressSingleKey(KEY_RIGHT_ARROW);
+      Serial.println("Tryb 4 -> Right");
+      break;
+
+    default:
+      Serial.print("Tryb 4, brak akcji dla S");
+      Serial.println(buttonNumber);
+      break;
+  }
+}
+
+void handleMode9Browser(uint8_t buttonNumber) {
+  switch (buttonNumber) {
+    case 1:
+      pressCtrlKey('t');
+      Serial.println("Tryb 9 -> Ctrl + T");
+      break;
+
+    case 2:
+      pressCtrlKey('w');
+      Serial.println("Tryb 9 -> Ctrl + W");
+      break;
+
+    case 3:
+      pressCtrlKey('n');
+      Serial.println("Tryb 9 -> Ctrl + N");
+      break;
+
+    case 4:
+      pressAltKey(KEY_TAB);
+      Serial.println("Tryb 9 -> Alt + Tab");
+      break;
+
+    case 5:
+      pressCtrlShiftKey('t');
+      Serial.println("Tryb 9 -> Ctrl + Shift + T");
+      break;
+
+    case 6:
+      pressCtrlKey('f');
+      Serial.println("Tryb 9 -> Ctrl + F");
+      break;
+
+    case 7:
+      pressCtrlKey('r');
+      Serial.println("Tryb 9 -> Ctrl + R");
+      break;
+
+    case 8:
+      pressCtrlKey('l');
+      Serial.println("Tryb 9 -> Ctrl + L");
+      break;
+
+    case 9:
+      pressCtrlKey('h');
+      Serial.println("Tryb 9 -> Open history");
+      break;
+
+    case 10:
+      pressCtrlKey('j');
+      Serial.println("Tryb 9 -> Open downloads");
+      break;
+
+    case 11:
+      pressWinShiftKey('s');
+      Serial.println("Tryb 9 -> Screenshot");
+      break;
+
+    case 12:
+      pressCtrlShiftKey('n');
+      Serial.println("Tryb 9 -> Incognito");
+      break;
+
+    case 13:
+      pressCtrlKey('+');
+      Serial.println("Tryb 9 -> Zoom +");
+      break;
+
+    case 14:
+      pressCtrlKey('-');
+      Serial.println("Tryb 9 -> Zoom -");
+      break;
+
+    case 15:
+      pressCtrlKey('0');
+      Serial.println("Tryb 9 -> Reset zoom");
+      break;
+
+    default:
+      Serial.print("Tryb 9, brak akcji dla S");
+      Serial.println(buttonNumber);
+      break;
+  }
+}
+
+void pressConsumerKeyNTimes(uint16_t key, uint8_t times) {
+  for (uint8_t i = 0; i < times; i++) {
+    Keyboard.pressConsumer(key);
+    delay(30);
+    Keyboard.releaseConsumer();
+    delay(30);
+  }
+
+  renderScreen();
+}
+
+void volumeUp(uint8_t amount) {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_VOLUME_INCREMENT, amount);
+}
+
+void volumeDown(uint8_t amount) {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_VOLUME_DECREMENT, amount);
+}
+
+void volumeMute() {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_MUTE, 1);
+}
+
+void brightnessUp(uint8_t amount) {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_BRIGHTNESS_INCREMENT, amount);
+}
+
+void brightnessDown(uint8_t amount) {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_BRIGHTNESS_DECREMENT, amount);
+}
+
+void mediaPlayPause() {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_PLAY_PAUSE, 1);
+}
+
+void mediaPrev() {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_SCAN_PREVIOUS_TRACK, 1);
+}
+
+void mediaNext() {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_SCAN_NEXT_TRACK, 1);
+}
+
+void mediaStop() {
+  pressConsumerKeyNTimes(HID_USAGE_CONSUMER_STOP, 1);
+}
+
+void discoMode() {
+  // volumeUp(50);
+  openUrl("https://www.youtube.com/watch?v=auLu9oUTzZo");
+  Serial.println("Tryb 1 -> DISCO");
+}
+
+void helpMode() {
+  volumeMute();
+  pressCtrlShiftKey('w');
+  pressWinKey('d');
+  brightnessDown(50);
+  Serial.println("Tryb 1 -> HELP");
+}
 // --------------------
 // PRZYCISKI
 // --------------------
@@ -921,15 +1380,37 @@ void executeModeAction(uint8_t mode, uint8_t buttonNumber) {
       if (buttonNumber == 1) {
         openUrl("https://www.google.com");
         Serial.println("Tryb 1 -> otwarto Google");
-      } if (buttonNumber == 2) {
+      } else if (buttonNumber == 2) {
         openUrl("https://www.agh.edu.pl/");
         Serial.println("Tryb 1 -> otwarto stronę AGH");
-      } if (buttonNumber == 5) {
+      } else if (buttonNumber == 3) {
+        discoMode();
+      } else if (buttonNumber == 4) {
+        helpMode();
+      } else if (buttonNumber == 5) {
         openUrl("https://web.usos.agh.edu.pl/");
         Serial.println("Tryb 1 -> otwarto USOS AGH");
-      } if (buttonNumber == 6) {
+      } else if (buttonNumber == 6) {
         openUrl("https://upel.agh.edu.pl/");
         Serial.println("Tryb 1 -> otwarto UPeL");
+      } else if (buttonNumber == 9) {
+        mediaPlayPause();
+        Serial.println("Tryb 1 -> play/pause");
+      } else if (buttonNumber == 10) {
+        mediaPrev();
+        Serial.println("Tryb 1 -> previous track");
+      } else if (buttonNumber == 11) {
+        mediaNext();
+        Serial.println("Tryb 1 -> next track");
+      } else if (buttonNumber == 12) {
+        volumeMute();
+        Serial.println("Tryb 1 -> mute");
+      } else if (buttonNumber == 13) {
+        volumeDown(3);
+        Serial.println("Tryb 1 -> volume -6");
+      } else if (buttonNumber == 14) {
+        volumeUp(3);
+        Serial.println("Tryb 1 -> volume +6");
       } else {
         Serial.print("Tryb 1, przycisk S");
         Serial.println(buttonNumber);
@@ -947,13 +1428,11 @@ void executeModeAction(uint8_t mode, uint8_t buttonNumber) {
       break;
 
     case 3:
-      Serial.print("Tryb 3, przycisk S");
-      Serial.println(buttonNumber);
+      handleMode3TextEdit(buttonNumber);
       break;
 
     case 4:
-      Serial.print("Tryb 4, przycisk S");
-      Serial.println(buttonNumber);
+      handleMode4Navigation(buttonNumber);
       break;
 
     case 5:
@@ -1011,18 +1490,54 @@ void executeModeAction(uint8_t mode, uint8_t buttonNumber) {
       break;
 
     case 7:
-      Serial.print("Tryb 7, przycisk S");
-      Serial.println(buttonNumber);
+      if (buttonNumber == 1) {
+        mediaPlayPause();
+        Serial.println("Tryb 7 -> play/pause");
+      } else if (buttonNumber == 2) {
+        mediaPrev();
+        Serial.println("Tryb 7 -> previous track");
+      } else if (buttonNumber == 3) {
+        mediaNext();
+        Serial.println("Tryb 7 -> next track");
+      } else if (buttonNumber == 4) {
+        volumeMute();
+        Serial.println("Tryb 7 -> mute");
+      } else if (buttonNumber == 5) {
+        volumeDown(10);
+        Serial.println("Tryb 7 -> volume -20");
+      } else if (buttonNumber == 6) {
+        volumeDown(3);
+        Serial.println("Tryb 7 -> volume -6");
+      } else if (buttonNumber == 7) {
+        volumeUp(3);
+        Serial.println("Tryb 7 -> volume +6");
+      } else if (buttonNumber == 8) {
+        volumeUp(10);
+        Serial.println("Tryb 7 -> volume +20");
+      } else if (buttonNumber == 9) {
+        brightnessDown(10);
+        Serial.println("Tryb 7 -> brightness -20");
+      } else if (buttonNumber == 10) {
+        brightnessDown(3);
+        Serial.println("Tryb 7 -> brightness -6");
+      } else if (buttonNumber == 11) {
+        brightnessUp(3);
+        Serial.println("Tryb 7 -> brightness +6");
+      } else if (buttonNumber == 12) {
+        brightnessUp(10);
+        Serial.println("Tryb 7 -> brightness +20");
+      } else {
+        Serial.print("Tryb 7, przycisk S");
+        Serial.println(buttonNumber);
+      }
       break;
 
     case 8:
-      Serial.print("Tryb 8, przycisk S");
-      Serial.println(buttonNumber);
+      sendMode8Terminal(buttonNumber);
       break;
 
     case 9:
-      Serial.print("Tryb 9, przycisk S");
-      Serial.println(buttonNumber);
+      handleMode9Browser(buttonNumber);
       break;
 
     case 10:
